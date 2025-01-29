@@ -1,6 +1,7 @@
 const express = require("express");
 const mysql = require("mysql");
 const cors = require("cors");
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,12 +9,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// เชื่อมต่อฐานข้อมูล MySQL
+// 🔹 เชื่อมต่อฐานข้อมูล MySQL ผ่าน Environment Variables
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "",
-  database: "crm_prone",
+  host: process.env.DATABASE_HOST,
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASS,
+  database: process.env.DATABASE_NAME,
+  port: process.env.DATABASE_PORT,
 });
 
 db.connect((err) => {
@@ -52,25 +54,21 @@ app.get("/api/customer", (req, res) => {
   });
 });
 
-
 // 🟢 API: บันทึกข้อมูลลูกค้าใหม่
 app.post("/api/customer", (req, res) => {
   console.log("📩 Received POST request:", req.body);
   const { line_id, nickname, first_name, last_name, birth_date, gender, phone, email } = req.body;
 
-  // ตรวจสอบว่าข้อมูลครบหรือไม่
   if (!line_id || !nickname || !first_name || !last_name || !birth_date || !gender || !phone || !email) {
     console.log("⚠️ Error: Missing required fields");
     return res.status(400).json({ status: "error", message: "Missing required fields" });
   }
 
-  // SQL Query สำหรับเพิ่มข้อมูลลงในฐานข้อมูล
   const query = `
     INSERT INTO customers (line_id, nickname, first_name, last_name, birth_date, gender, phone, email)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  // รัน Query เพื่อบันทึกข้อมูล
   db.query(query, [line_id, nickname, first_name, last_name, birth_date, gender, phone, email], (err) => {
     if (err) {
       console.error("❌ Database insertion failed:", err);
@@ -81,7 +79,6 @@ app.post("/api/customer", (req, res) => {
     res.json({ status: "success", message: "Customer added successfully" });
   });
 });
-
 
 // 🟢 ตรวจสอบว่าเซิร์ฟเวอร์ทำงานอยู่
 app.get("/", (req, res) => {
